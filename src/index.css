@@ -1,0 +1,228 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Automotive E-commerce Design System - High Performance Theme
+All colors MUST be HSL for consistency and theming support.
+*/
+
+@layer base {
+  :root {
+    /* Core Background & Surface Colors */
+    --background: 0 0% 7%;           /* Deep black background */
+    --foreground: 0 0% 95%;          /* Pure white text */
+    --surface: 0 0% 12%;             /* Elevated surface color */
+    --surface-hover: 0 0% 16%;       /* Surface hover state */
+
+    /* Card & Container Colors */
+    --card: 0 0% 10%;                /* Card backgrounds */
+    --card-foreground: 0 0% 95%;     /* Card text */
+    --card-border: 0 0% 20%;         /* Subtle card borders */
+
+    /* Popover & Modal Colors */
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 95%;
+
+    /* Primary Red - Performance/Racing Theme */
+    --primary: 0 84% 55%;            /* Vibrant racing red */
+    --primary-hover: 0 84% 48%;      /* Darker red on hover */
+    --primary-foreground: 0 0% 100%; /* White text on red */
+    --primary-glow: 0 84% 65%;       /* Lighter red for glows */
+
+    /* Secondary Gray Tones */
+    --secondary: 0 0% 18%;           /* Medium gray surfaces */
+    --secondary-hover: 0 0% 22%;     /* Secondary hover */
+    --secondary-foreground: 0 0% 85%; /* Light gray text */
+
+    /* Muted/Subtle Elements */
+    --muted: 0 0% 15%;               /* Muted backgrounds */
+    --muted-foreground: 0 0% 65%;    /* Muted text */
+
+    /* Accent Colors */
+    --accent: 0 0% 20%;              /* Accent surfaces */
+    --accent-foreground: 0 0% 90%;   /* Accent text */
+    --accent-gold: 45 92% 65%;       /* Premium gold accent */
+
+    /* Status Colors */
+    --success: 142 76% 36%;          /* Green for success */
+    --warning: 38 92% 50%;           /* Orange for warnings */
+    --destructive: 0 84% 60%;        /* Red for errors */
+    --destructive-foreground: 0 0% 98%;
+
+    /* Border & Input Elements */
+    --border: 0 0% 22%;              /* Default borders */
+    --border-hover: 0 0% 35%;        /* Hover borders */
+    --input: 0 0% 12%;               /* Input backgrounds */
+    --input-border: 0 0% 25%;        /* Input borders */
+    --ring: 0 84% 55%;               /* Focus ring color */
+
+    /* Custom Automotive Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-surface: linear-gradient(180deg, hsl(var(--surface)), hsl(var(--background)));
+    --gradient-hero: linear-gradient(135deg, 
+      hsla(0, 0%, 0%, 0.8), 
+      hsla(0, 84%, 25%, 0.4), 
+      hsla(0, 0%, 0%, 0.9)
+    );
+
+    /* Shadow System */
+    --shadow-sm: 0 2px 4px hsla(0, 0%, 0%, 0.3);
+    --shadow-md: 0 4px 12px hsla(0, 0%, 0%, 0.4);
+    --shadow-lg: 0 8px 25px hsla(0, 0%, 0%, 0.5);
+    --shadow-glow: 0 0 20px hsla(var(--primary), 0.3);
+    --shadow-red-glow: 0 0 30px hsla(var(--primary), 0.4);
+
+    /* Border Radius */
+    --radius: 0.5rem;
+    --radius-sm: 0.25rem;
+    --radius-lg: 0.75rem;
+
+    /* Typography Scale */
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    --font-size-4xl: 2.25rem;
+    --font-size-5xl: 3rem;
+
+    /* Transition System */
+    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  /* Light mode overrides (keeping dark as default for automotive theme) */
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 0 0% 10%;
+    --surface: 0 0% 95%;
+    --card: 0 0% 100%;
+    --primary: 0 84% 55%;
+    --border: 0 0% 85%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Custom scrollbar for automotive theme */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary));
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary-hover));
+  }
+}
+
+@layer components {
+  /* Hero section styling */
+  .hero-gradient {
+    background: var(--gradient-hero);
+  }
+
+  /* Glow effects for automotive premium feel */
+  .glow-red {
+    box-shadow: var(--shadow-red-glow);
+  }
+
+  .glow-subtle {
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* Button variants */
+  .btn-racing {
+    @apply bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-wider;
+    @apply px-8 py-3 rounded-lg transition-all duration-300;
+    @apply shadow-lg hover:shadow-red-glow transform hover:-translate-y-0.5;
+  }
+
+  .btn-outline-racing {
+    @apply border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground;
+    @apply font-bold uppercase tracking-wider px-8 py-3 rounded-lg;
+    @apply transition-all duration-300 hover:shadow-red-glow;
+  }
+
+  /* Card styling */
+  .card-automotive {
+    @apply bg-card border border-card-border rounded-lg shadow-md;
+    @apply hover:shadow-lg transition-all duration-300;
+    @apply hover:border-border-hover;
+  }
+
+  /* Product card effects */
+  .product-card {
+    @apply card-automotive overflow-hidden;
+    @apply hover:transform hover:scale-[1.02] transition-all duration-300;
+  }
+
+  /* Text effects */
+  .text-gradient-red {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Notification bar animation */
+  .notification-slide {
+    animation: slide-text 20s linear infinite;
+  }
+
+  @keyframes slide-text {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+  }
+
+  /* Automotive grid patterns */
+  .grid-automotive {
+    background-image: 
+      linear-gradient(hsl(var(--border)) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px);
+    background-size: 20px 20px;
+    opacity: 0.1;
+  }
+}
