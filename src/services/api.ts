@@ -1,6 +1,6 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
   (import.meta.env.PROD 
-    ? 'https://accesscarauto-production-xxx.up.railway.app/api' 
+    ? 'https://accesscarauto-backend.onrender.com/api' 
     : 'http://localhost:5000/api');
 
 interface ApiResponse<T = any> {
