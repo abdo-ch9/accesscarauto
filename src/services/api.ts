@@ -1,6 +1,6 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
   (import.meta.env.PROD 
-    ? 'https://your-backend-domain.vercel.app/api' 
+    ? 'https://accesscarauto-backend.vercel.app/api' 
     : 'http://localhost:5000/api');
 
 interface ApiResponse<T = any> {
