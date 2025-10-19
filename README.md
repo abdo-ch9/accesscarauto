@@ -29,12 +29,34 @@ git clone <YOUR_GIT_URL>
 # Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
+# Step 3: Set up the backend (includes database setup)
+node setup-backend.js
+
+# Step 4: Install frontend dependencies
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Step 5: Start the backend server (in a new terminal)
+cd backend
+npm run dev
+
+# Step 6: Start the frontend development server (in another terminal)
 npm run dev
 ```
+
+## Database Setup
+
+The application uses MongoDB for data storage. You have two options:
+
+### Option 1: Local MongoDB
+1. Install MongoDB locally on your system
+2. Start MongoDB service
+3. The backend will connect to `mongodb://localhost:27017/aero-car-store`
+
+### Option 2: MongoDB Atlas (Cloud)
+1. Create a free account at [MongoDB Atlas](https://www.mongodb.com/atlas)
+2. Create a new cluster
+3. Get your connection string
+4. Update `backend/.env` with your MongoDB Atlas connection string
 
 **Edit a file directly in GitHub**
 
@@ -54,11 +76,19 @@ npm run dev
 
 This project is built with:
 
+**Frontend:**
 - Vite
 - TypeScript
 - React
 - shadcn-ui
 - Tailwind CSS
+
+**Backend:**
+- Node.js
+- Express.js
+- MongoDB
+- JWT Authentication
+- bcryptjs for password hashing
 
 ## How can I deploy this project?
 
