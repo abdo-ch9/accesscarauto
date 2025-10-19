@@ -69,13 +69,32 @@ class ApiService {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Request failed');
+      // Try to parse JSON safely; if not JSON, fall back to text
+      const contentType = response.headers.get('content-type') || '';
+      let payload: any = null;
+      if (contentType.includes('application/json')) {
+        try {
+          payload = await response.json();
+        } catch (e) {
+          // Malformed JSON (e.g., HTML 404 page). Read as text for diagnostics
+          const text = await response.text();
+          throw new Error(text?.slice(0, 200) || `Unexpected response format (status ${response.status})`);
+        }
+      } else {
+        const text = await response.text();
+        if (!response.ok) {
+          throw new Error(text?.slice(0, 200) || `HTTP ${response.status}`);
+        }
+        // Non-JSON but OK; treat as error for our API contract
+        throw new Error('Unexpected non-JSON response from server');
       }
 
-      return data;
+      if (!response.ok) {
+        throw new Error(payload?.message || `Request failed (${response.status})`);
+      }
+
+      return payload;
     } catch (error) {
       console.error('API request failed:', error);
       throw error;
