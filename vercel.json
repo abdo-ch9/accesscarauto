@@ -1,0 +1,10 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://accesscarauto-n56x-czo7rkxkn-abdelchpro-4470s-projects.vercel.app/api/:path*"
+    }
+  ]
+}
+
+
