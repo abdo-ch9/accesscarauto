@@ -2,10 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, ShoppingCart } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import carbonFiberSpoiler from "@/assets/carbon-fiber-spoiler.jpg";
-import performanceExhaust from "@/assets/performance-exhaust.jpg";
-import racingSeats from "@/assets/racing-seats.jpg";
-import turboKit from "@/assets/turbo-kit.jpg";
+import { cartEvents } from "@/lib/utils";
+import { products as catalog } from "@/lib/products";
+import { Link } from "react-router-dom";
 
 const TrendingItems = () => {
   const addToCart = (productName: string) => {
@@ -13,45 +12,17 @@ const TrendingItems = () => {
       title: "Added to cart",
       description: `${productName} has been added to your cart`,
     });
+    cartEvents.emit({ type: "cart:add", delta: 1 });
   };
-  const products = [
-    {
-      id: 1,
-      name: "Carbon Fiber Spoiler",
-      price: "$899",
-      image: carbonFiberSpoiler,
-      badge: "NEW ARRIVAL",
-      rating: 4.8,
-      reviews: 24
-    },
-    {
-      id: 2,
-      name: "Performance Exhaust System",
-      price: "$1,299",
-      image: performanceExhaust,
-      badge: "BEST SELLER",
-      rating: 4.9,
-      reviews: 156
-    },
-    {
-      id: 3,
-      name: "Racing Seats Set",
-      price: "$2,499",
-      image: racingSeats,
-      badge: "HOT DEALS",
-      rating: 4.7,
-      reviews: 89
-    },
-    {
-      id: 4,
-      name: "Turbo Upgrade Kit",
-      price: "$3,999",
-      image: turboKit,
-      badge: "NEW ARRIVAL",
-      rating: 5.0,
-      reviews: 12
-    }
-  ];
+  const products = catalog.map(p => ({
+    id: p.id,
+    name: p.name,
+    price: `$${p.price.toLocaleString()}`,
+    image: p.image,
+    badge: p.badge || "",
+    rating: 4.8,
+    reviews: 24,
+  }));
 
   const getBadgeVariant = (badge: string) => {
     switch (badge) {
@@ -80,8 +51,9 @@ const TrendingItems = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {products.map((product, index) => (
-            <div 
+            <Link 
               key={product.id} 
+              to={`/product/${product.id}`}
               className={`product-card group animate-fade-in-up-delay-${index * 100}`}
             >
               <div className="relative overflow-hidden">
@@ -119,14 +91,14 @@ const TrendingItems = () => {
                   <Button 
                     size="sm" 
                     className="btn-racing"
-                    onClick={() => addToCart(product.name)}
+                    onClick={(e) => { e.preventDefault(); addToCart(product.name); }}
                   >
                     <ShoppingCart className="h-4 w-4 mr-1" />
                     Add
                   </Button>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 

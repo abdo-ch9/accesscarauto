@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart, Heart } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import { cartEvents } from "@/lib/utils";
 import brakeDiscImage from "@/assets/brake-disc-set.jpg";
 import brakeCaliperImage from "@/assets/brake-caliper-red.jpg";
 
@@ -13,22 +14,27 @@ const FeaturedProducts = () => {
       title: "Added to cart",
       description: `${productName} has been added to your cart`,
     });
+    cartEvents.emit({ type: "cart:add", delta: 1 });
   };
 
   const toggleWishlist = (productId: number, productName: string) => {
     const isInWishlist = wishlist.includes(productId);
     if (isInWishlist) {
-      setWishlist(wishlist.filter(id => id !== productId));
+      const next = wishlist.filter(id => id !== productId);
+      setWishlist(next);
       toast({
         title: "Removed from wishlist",
         description: `${productName} removed from your wishlist`,
       });
+      cartEvents.emit({ type: "wishlist:set", count: next.length });
     } else {
-      setWishlist([...wishlist, productId]);
+      const next = [...wishlist, productId];
+      setWishlist(next);
       toast({
         title: "Added to wishlist",
         description: `${productName} added to your wishlist`,
       });
+      cartEvents.emit({ type: "wishlist:set", count: next.length });
     }
   };
   const featuredProducts = [

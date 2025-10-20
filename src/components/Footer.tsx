@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Truck, Clock, RotateCcw, Mail } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 
 const Footer = () => {
@@ -120,11 +121,11 @@ const Footer = () => {
             <div>
               <h4 className="font-bold text-foreground mb-4 uppercase tracking-wider">Quick Links</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Shop All</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Performance Parts</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Accessories</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">About Us</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Blog</a></li>
+                <li><Link to="/shop" className="text-muted-foreground hover:text-primary transition-colors">Shop All</Link></li>
+                <li><Link to="/performance" className="text-muted-foreground hover:text-primary transition-colors">Performance Parts</Link></li>
+                <li><Link to="/accessories" className="text-muted-foreground hover:text-primary transition-colors">Accessories</Link></li>
+                <li><Link to="/about" className="text-muted-foreground hover:text-primary transition-colors">About Us</Link></li>
+                <li><Link to="/blog" className="text-muted-foreground hover:text-primary transition-colors">Blog</Link></li>
               </ul>
             </div>
 
@@ -132,11 +133,11 @@ const Footer = () => {
             <div>
               <h4 className="font-bold text-foreground mb-4 uppercase tracking-wider">My Account</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Login</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Register</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Wishlist</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Order History</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Track Order</a></li>
+                <li><Link to="/login" className="text-muted-foreground hover:text-primary transition-colors">Login</Link></li>
+                <li><Link to="/register" className="text-muted-foreground hover:text-primary transition-colors">Register</Link></li>
+                <li><Link to="/wishlist" className="text-muted-foreground hover:text-primary transition-colors">Wishlist</Link></li>
+                <li><Link to="/orders" className="text-muted-foreground hover:text-primary transition-colors">Order History</Link></li>
+                <li><Link to="/track-order" className="text-muted-foreground hover:text-primary transition-colors">Track Order</Link></li>
               </ul>
             </div>
 
@@ -144,11 +145,11 @@ const Footer = () => {
             <div>
               <h4 className="font-bold text-foreground mb-4 uppercase tracking-wider">Customer Service</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Contact Us</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Shipping Info</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Return Policy</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Size Guide</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">FAQ</a></li>
+                <li><Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors">Contact Us</Link></li>
+                <li><Link to="/shipping" className="text-muted-foreground hover:text-primary transition-colors">Shipping Info</Link></li>
+                <li><Link to="/returns" className="text-muted-foreground hover:text-primary transition-colors">Return Policy</Link></li>
+                <li><Link to="/size-guide" className="text-muted-foreground hover:text-primary transition-colors">Size Guide</Link></li>
+                <li><Link to="/faq" className="text-muted-foreground hover:text-primary transition-colors">FAQ</Link></li>
               </ul>
             </div>
           </div>
@@ -165,9 +166,9 @@ const Footer = () => {
               © {currentYear} Aero Car Store. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">Privacy Policy</a>
-              <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">Terms of Service</a>
-              <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">Cookies</a>
+              <Link to="/privacy" className="text-muted-foreground hover:text-primary text-sm transition-colors">Privacy Policy</Link>
+              <Link to="/terms" className="text-muted-foreground hover:text-primary text-sm transition-colors">Terms of Service</Link>
+              <Link to="/cookies" className="text-muted-foreground hover:text-primary text-sm transition-colors">Cookies</Link>
             </div>
           </div>
         </div>

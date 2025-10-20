@@ -1,13 +1,26 @@
 import { Search, ShoppingCart, Heart, User, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import { cartEvents } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [cartItems, setCartItems] = useState(2);
+  const [cartItems, setCartItems] = useState(0);
   const [wishlistItems, setWishlistItems] = useState(0);
+  useEffect(() => {
+    const off = cartEvents.on((e) => {
+      if (e.type === "cart:add" || e.type === "cart:remove") {
+        setCartItems((c) => Math.max(0, c + e.delta));
+      } else if (e.type === "wishlist:set") {
+        setWishlistItems(e.count);
+      }
+    });
+    return off;
+  }, []);
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
@@ -18,6 +31,7 @@ const Header = () => {
     }
   };
   return (
+    <>
     <header className="fixed top-0 left-0 right-0 z-50">
       {/* Top Notification Bar */}
       <div className="bg-primary text-primary-foreground py-2 overflow-hidden">
@@ -34,57 +48,85 @@ const Header = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center space-x-2">
-              <div className="text-2xl font-bold text-gradient-red">AERO</div>
+              <Link to="/" className="text-2xl font-bold text-gradient-red">AERO</Link>
             </div>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#" className="text-foreground hover:text-primary transition-colors font-medium">Home</a>
-              <a href="#" className="text-foreground hover:text-primary transition-colors font-medium">Shop</a>
-              <a href="#" className="text-foreground hover:text-primary transition-colors font-medium">About</a>
-              <a href="#" className="text-foreground hover:text-primary transition-colors font-medium">Services</a>
-              <a href="#" className="text-foreground hover:text-primary transition-colors font-medium">Location</a>
-              <a href="#" className="text-foreground hover:text-primary transition-colors font-medium">Pages</a>
-              <a href="#" className="text-foreground hover:text-primary transition-colors font-medium">Contact</a>
+              <Link to="/" className="text-foreground hover:text-primary transition-colors font-medium">Home</Link>
+              <Link to="/shop" className="text-foreground hover:text-primary transition-colors font-medium">Shop</Link>
+              <Link to="/about" className="text-foreground hover:text-primary transition-colors font-medium">About</Link>
+              <Link to="/services" className="text-foreground hover:text-primary transition-colors font-medium">Services</Link>
+              <Link to="/location" className="text-foreground hover:text-primary transition-colors font-medium">Location</Link>
+              <Link to="/contact" className="text-foreground hover:text-primary transition-colors font-medium">Contact</Link>
             </div>
 
             {/* Right Icons */}
             <div className="flex items-center space-x-4">
-              <div className="hidden md:flex items-center space-x-2">
+            <div className="hidden md:flex items-center space-x-2">
+              <div className="flex items-center bg-surface border rounded-full px-2 py-1 shadow-sm">
                 <Input
                   type="text"
                   placeholder="Search parts..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="w-48 bg-white/10 border-white/20 text-foreground placeholder:text-muted-foreground"
+                  className="w-56 bg-transparent border-0 focus-visible:ring-0 text-foreground placeholder:text-muted-foreground"
                 />
-                <Button variant="ghost" size="icon" onClick={handleSearch} className="hover:bg-surface">
+                <Button variant="ghost" size="icon" onClick={handleSearch} className="hover:bg-secondary rounded-full">
                   <Search className="h-5 w-5" />
                 </Button>
               </div>
-              <Button variant="ghost" size="icon" className="md:hidden hover:bg-surface">
+            </div>
+              <Button variant="ghost" size="icon" className="md:hidden hover:bg-surface" onClick={handleSearch}>
                 <Search className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="hover:bg-surface relative">
-                <ShoppingCart className="h-5 w-5" />
-                {cartItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {cartItems}
-                  </span>
-                )}
-              </Button>
-              <Button variant="ghost" size="icon" className="hover:bg-surface relative">
-                <Heart className="h-5 w-5" />
-                {wishlistItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {wishlistItems}
-                  </span>
-                )}
-              </Button>
-              <Button variant="ghost" size="icon" className="hover:bg-surface">
-                <User className="h-5 w-5" />
-              </Button>
+              <div className="hidden md:flex items-center bg-surface border rounded-full px-1.5 py-1 shadow-sm">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button asChild variant="ghost" size="icon" className="hover:bg-secondary rounded-full">
+                        <Link to="/cart" className="relative">
+                          <ShoppingCart className="h-5 w-5" />
+                          {cartItems > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] rounded-full h-4 w-4 flex items-center justify-center animate-pulse">
+                              {cartItems}
+                            </span>
+                          )}
+                        </Link>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Cart</TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button asChild variant="ghost" size="icon" className="hover:bg-secondary rounded-full">
+                        <Link to="/wishlist" className="relative">
+                          <Heart className="h-5 w-5" />
+                          {wishlistItems > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
+                              {wishlistItems}
+                            </span>
+                          )}
+                        </Link>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Wishlist</TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button asChild variant="ghost" size="icon" className="hover:bg-secondary rounded-full">
+                        <Link to="/login">
+                          <User className="h-5 w-5" />
+                        </Link>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Account</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               
               {/* Mobile Menu Button */}
               <Button variant="ghost" size="icon" className="md:hidden">
@@ -95,6 +137,9 @@ const Header = () => {
         </div>
       </nav>
     </header>
+    {/* Spacer to offset fixed header height */}
+    <div aria-hidden className="h-[104px]" />
+    </>
   );
 };
 

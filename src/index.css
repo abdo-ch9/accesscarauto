@@ -225,4 +225,27 @@ All colors MUST be HSL for consistency and theming support.
     background-size: 20px 20px;
     opacity: 0.1;
   }
+
+  /* Shared page hero banner */
+  .page-hero {
+    @apply relative overflow-hidden rounded-xl border border-border bg-[radial-gradient(1200px_400px_at_10%_-20%,rgba(255,0,0,0.08),transparent),radial-gradient(800px_300px_at_90%_-10%,rgba(255,0,0,0.06),transparent)];
+    @apply py-14 px-6 sm:px-10 mb-8; 
+  }
+  .page-hero h1 {
+    @apply text-4xl font-extrabold tracking-tight;
+  }
+  .page-hero p {
+    @apply text-muted-foreground mt-2;
+  }
+
+  /* Prose-like typography for policy/help pages */
+  .prose-policy {
+    @apply card-automotive p-6 leading-relaxed;
+  }
+  .prose-policy h2 {
+    @apply text-xl font-bold mt-4;
+  }
+  .prose-policy p, .prose-policy ul, .prose-policy ol {
+    @apply text-muted-foreground;
+  }
 }

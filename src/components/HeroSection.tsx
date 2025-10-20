@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const HeroSection = () => {
   return (
@@ -34,11 +35,11 @@ const HeroSection = () => {
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Button className="btn-racing glow-red">
-            Shop Now
+          <Button asChild className="btn-racing glow-red">
+            <Link to="/shop">Shop Now</Link>
           </Button>
-          <Button className="btn-outline-racing">
-            View Catalog
+          <Button asChild className="btn-outline-racing">
+            <Link to="/shop">View Catalog</Link>
           </Button>
         </div>
       </div>
