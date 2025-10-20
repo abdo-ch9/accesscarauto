@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,15 +16,37 @@ import { Link } from "react-router-dom";
 const Shop = () => {
   const products = useMemo(() => catalog, []);
 
+  const priceBounds = useMemo(() => {
+    let min = Infinity;
+    let max = -Infinity;
+    for (const p of products) {
+      if (p.price < min) min = p.price;
+      if (p.price > max) max = p.price;
+    }
+    // Fallback if catalog empty
+    if (!isFinite(min) || !isFinite(max)) {
+      min = 0;
+      max = 0;
+    }
+    return { min, max };
+  }, [products]);
+
   const [category, setCategory] = useState<string>("all");
-  const [maxPrice, setMaxPrice] = useState<number>(4000);
+  const [priceRange, setPriceRange] = useState<[number, number]>([priceBounds.min, priceBounds.max]);
   const [onlyNew, setOnlyNew] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const availableBadges = useMemo(() => Array.from(new Set(products.map(p => p.badge).filter(Boolean))) as string[], [products]);
+  const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
 
   const filteredProducts = products.filter((p) => {
     const matchesCategory = category === "all" || p.category === category;
-    const matchesPrice = p.price <= maxPrice;
+    const matchesPrice = p.price >= priceRange[0] && p.price <= priceRange[1];
+    const matchesSearch = searchQuery.trim().length === 0 ||
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesBadgeSelection = selectedBadges.length === 0 || (p.badge ? selectedBadges.includes(p.badge) : false);
     const matchesNew = !onlyNew || p.badge === "NEW";
-    return matchesCategory && matchesPrice && matchesNew;
+    return matchesCategory && matchesPrice && matchesSearch && matchesBadgeSelection && matchesNew;
   });
 
   const addToCart = (name: string) => {
@@ -53,6 +76,11 @@ const Shop = () => {
             </div>
 
             <div className="mb-4">
+              <p className="text-sm text-muted-foreground mb-2">Search</p>
+              <Input placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            </div>
+
+            <div className="mb-4">
               <p className="text-sm text-muted-foreground mb-2">Category</p>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger>
@@ -66,14 +94,50 @@ const Shop = () => {
               </Select>
             </div>
 
+            <div className="mb-4">
+              <p className="text-sm text-muted-foreground mb-2">Badges</p>
+              {availableBadges.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No badges available</p>
+              ) : (
+                <div className="flex flex-wrap gap-3">
+                  {availableBadges.map((b) => {
+                    const checked = selectedBadges.includes(b);
+                    return (
+                      <div key={b} className="flex items-center gap-2">
+                        <Checkbox id={`badge-${b}`} checked={checked} onCheckedChange={(v) => {
+                          const next = Boolean(v)
+                            ? Array.from(new Set([...selectedBadges, b]))
+                            : selectedBadges.filter(x => x !== b);
+                          setSelectedBadges(next);
+                        }} />
+                        <label htmlFor={`badge-${b}`} className="text-sm text-foreground">{b}</label>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             <div className="mb-6">
-              <p className="text-sm text-muted-foreground mb-2">Max Price: ${maxPrice}</p>
-              <Slider value={[maxPrice]} min={100} max={4000} step={50} onValueChange={(v) => setMaxPrice(v[0])} />
+              <p className="text-sm text-muted-foreground mb-2">Price Range: ${priceRange[0]} - ${priceRange[1]}</p>
+              <Slider value={priceRange} min={priceBounds.min} max={priceBounds.max} step={50} onValueChange={(v) => setPriceRange(v as [number, number])} />
             </div>
 
             <div className="flex items-center gap-2">
               <Checkbox id="new" checked={onlyNew} onCheckedChange={(v) => setOnlyNew(Boolean(v))} />
               <label htmlFor="new" className="text-sm text-foreground">Only new arrivals</label>
+            </div>
+
+            <div className="mt-6">
+              <Button variant="secondary" className="w-full" onClick={() => {
+                setCategory("all");
+                setPriceRange([priceBounds.min, priceBounds.max]);
+                setOnlyNew(false);
+                setSearchQuery("");
+                setSelectedBadges([]);
+              }}>
+                Clear filters
+              </Button>
             </div>
           </aside>
 

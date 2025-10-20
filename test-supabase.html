@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .status {
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .success { background: #10b981; }
+        .error { background: #ef4444; }
+        .info { background: #3b82f6; }
+        button {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background: #7c3aed; }
+        pre {
+            background: #2d2d2d;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border: 1px solid #444;
+            background: #2d2d2d;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔌 Supabase Connection Test</h1>
+    
+    <div class="status info">
+        <strong>Project URL:</strong> https://ilsdfangzmyxtofidjii.supabase.co
+    </div>
+
+    <div id="status"></div>
+
+    <h2>Test Connection</h2>
+    <button onclick="testConnection()">Test Supabase Connection</button>
+    <button onclick="clearDemoMode()">Clear Demo Mode</button>
+
+    <h2>Test Registration</h2>
+    <input type="text" id="firstName" placeholder="First Name" value="Test">
+    <input type="text" id="lastName" placeholder="Last Name" value="User">
+    <input type="email" id="email" placeholder="Email" value="test@example.com">
+    <input type="password" id="password" placeholder="Password" value="password123">
+    <button onclick="testRegister()">Register Test User</button>
+
+    <h2>Test Login</h2>
+    <input type="email" id="loginEmail" placeholder="Email" value="test@example.com">
+    <input type="password" id="loginPassword" placeholder="Password" value="password123">
+    <button onclick="testLogin()">Test Login</button>
+
+    <div id="result"></div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        const SUPABASE_URL = 'https://ilsdfangzmyxtofidjii.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsc2RmYW5nem15eHRvZmlkamlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDY5MjAsImV4cCI6MjA3NjE4MjkyMH0.UPp5WvMECnwN71TixcwRMz5P8B_axfEsj0TGEdJEENo';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabase = supabase;
+
+        window.testConnection = async function() {
+            const status = document.getElementById('status');
+            status.innerHTML = '<div class="status info">Testing connection...</div>';
+
+            try {
+                const { data, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    status.innerHTML = `<div class="status error">
+                        <strong>❌ Connection Failed</strong><br>
+                        Error: ${error.message}<br><br>
+                        <strong>Possible Solutions:</strong><br>
+                        1. Your Supabase project might be paused. Visit 
+                        <a href="https://supabase.com/dashboard" target="_blank">Supabase Dashboard</a> 
+                        and resume it.<br>
+                        2. Check your internet connection<br>
+                        3. Verify your Supabase URL and key are correct
+                    </div>`;
+                } else {
+                    status.innerHTML = `<div class="status success">
+                        <strong>✅ Connected Successfully!</strong><br>
+                        Your Supabase project is active and responding.
+                    </div>`;
+                }
+            } catch (error) {
+                status.innerHTML = `<div class="status error">
+                    <strong>❌ Connection Error</strong><br>
+                    ${error.message}<br><br>
+                    Your Supabase project is likely paused or unreachable.
+                </div>`;
+            }
+        };
+
+        window.testRegister = async function() {
+            const result = document.getElementById('result');
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            result.innerHTML = '<div class="status info">Registering user...</div>';
+
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            first_name: firstName,
+                            last_name: lastName
+                        }
+                    }
+                });
+
+                if (error) {
+                    result.innerHTML = `<div class="status error">
+                        <strong>❌ Registration Failed</strong><br>
+                        ${error.message}
+                    </div>`;
+                } else {
+                    result.innerHTML = `<div class="status success">
+                        <strong>✅ User Registered!</strong><br>
+                        User ID: ${data.user.id}<br>
+                        Email: ${data.user.email}<br><br>
+                        Check your Supabase Dashboard:<br>
+                        <a href="https://supabase.com/dashboard/project/ilsdfangzmyxtofidjii/auth/users" 
+                           target="_blank">View Users</a>
+                    </div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="status error">
+                    <strong>❌ Error:</strong> ${error.message}
+                </div>`;
+            }
+        };
+
+        window.testLogin = async function() {
+            const result = document.getElementById('result');
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            result.innerHTML = '<div class="status info">Logging in...</div>';
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    result.innerHTML = `<div class="status error">
+                        <strong>❌ Login Failed</strong><br>
+                        ${error.message}
+                    </div>`;
+                } else {
+                    result.innerHTML = `<div class="status success">
+                        <strong>✅ Login Successful!</strong><br>
+                        User ID: ${data.user.id}<br>
+                        Email: ${data.user.email}<br>
+                        Session Token: ${data.session.access_token.substring(0, 20)}...
+                    </div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="status error">
+                    <strong>❌ Error:</strong> ${error.message}
+                </div>`;
+            }
+        };
+
+        window.clearDemoMode = function() {
+            localStorage.removeItem('useDemoMode');
+            localStorage.removeItem('demoUsers');
+            alert('Demo mode cleared! The app will now try to connect to Supabase first.');
+        };
+
+        // Auto-test on load
+        window.testConnection();
+    </script>
+</body>
+</html>
+

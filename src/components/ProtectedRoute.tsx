@@ -5,9 +5,10 @@ import { useAuth } from '@/contexts/AuthContext';
 interface ProtectedRouteProps {
   children: ReactNode;
   requireAuth?: boolean;
+  requireRole?: 'admin' | 'user';
 }
 
-const ProtectedRoute = ({ children, requireAuth = true }: ProtectedRouteProps) => {
+const ProtectedRoute = ({ children, requireAuth = true, requireRole }: ProtectedRouteProps) => {
   const { user, isLoading } = useAuth();
   const location = useLocation();
 
@@ -26,6 +27,11 @@ const ProtectedRoute = ({ children, requireAuth = true }: ProtectedRouteProps) =
   // If authentication is required but user is not logged in
   if (requireAuth && !user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Role-based guard
+  if (requireRole && user && user.role !== requireRole) {
+    return <Navigate to="/" replace />;
   }
 
   // If user is logged in but trying to access auth pages

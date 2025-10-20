@@ -49,9 +49,19 @@ const Register = () => {
     e.preventDefault();
     if (!validateForm()) return;
     setIsSubmitting(true);
-    const success = await register(formData);
-    if (success) navigate("/", { replace: true });
-    setIsSubmitting(false);
+    const safetyTimeout = setTimeout(() => {
+      // Ensure we never get stuck in submitting state due to any hanging network
+      setIsSubmitting(false);
+    }, 15000);
+    try {
+      const success = await register(formData);
+      if (success) {
+        navigate("/", { replace: true });
+      }
+    } finally {
+      clearTimeout(safetyTimeout);
+      setIsSubmitting(false);
+    }
   };
 
   const passwordRequirements = [
