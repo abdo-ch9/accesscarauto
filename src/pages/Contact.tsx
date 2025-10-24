@@ -1,15 +1,13 @@
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import { Input } from "@/components/ui/input";
+import PageLayout from "@/components/PageLayout";
+import FormInput from "@/components/FormInput";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { toast } from "@/hooks/use-toast";
+import { toast, useFormValidation, commonValidationRules } from "@/hooks";
 
 const Contact = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <PageLayout>
       <main className="container mx-auto px-4 py-24 max-w-2xl">
         <div className="page-hero">
           <h1>Contact</h1>
@@ -18,47 +16,76 @@ const Contact = () => {
 
         <ContactForm />
       </main>
-      <Footer />
-    </div>
+    </PageLayout>
   );
 };
 
 export default Contact;
 
 const ContactForm = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: ""
+  });
+
+  const { errors, validateForm, validateField } = useFormValidation({
+    name: commonValidationRules.name,
+    email: commonValidationRules.email,
+    message: commonValidationRules.message
+  });
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    validateField(field, value);
+  };
 
   const submit = () => {
-    if (!name || !email || !message) {
-      toast({ title: "Missing fields", variant: "destructive", description: "Please fill out all fields." });
-      return;
-    }
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      toast({ title: "Invalid email", variant: "destructive", description: "Enter a valid email address." });
-      return;
-    }
+    if (!validateForm(formData)) return;
+    
     toast({ title: "Message sent", description: "We'll get back to you soon." });
-    setName("");
-    setEmail("");
-    setMessage("");
+    setFormData({ name: "", email: "", message: "" });
   };
 
   return (
     <div className="card-automotive p-6 mt-8 space-y-4">
-      <div>
-        <label className="text-sm text-muted-foreground">Name</label>
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" className="bg-input border-input-border" />
+      <FormInput
+        id="name"
+        label="Name"
+        value={formData.name}
+        onChange={(value) => handleInputChange("name", value)}
+        error={errors.name}
+        placeholder="Your name"
+        required
+      />
+      
+      <FormInput
+        id="email"
+        label="Email"
+        type="email"
+        value={formData.email}
+        onChange={(value) => handleInputChange("email", value)}
+        error={errors.email}
+        placeholder="you@example.com"
+        required
+      />
+      
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">
+          Message <span className="text-destructive">*</span>
+        </label>
+        <Textarea 
+          value={formData.message} 
+          onChange={(e) => handleInputChange("message", e.target.value)} 
+          placeholder="How can we help?" 
+          className={`bg-input border-input-border min-h-[140px] ${errors.message ? 'border-destructive' : ''}`}
+          required
+        />
+        {errors.message && (
+          <p className="text-sm text-destructive">{errors.message}</p>
+        )}
       </div>
-      <div>
-        <label className="text-sm text-muted-foreground">Email</label>
-        <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" type="email" className="bg-input border-input-border" />
-      </div>
-      <div>
-        <label className="text-sm text-muted-foreground">Message</label>
-        <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="How can we help?" className="bg-input border-input-border min-h-[140px]" />
-      </div>
+      
       <Button onClick={submit} className="btn-racing">Send</Button>
     </div>
   );

@@ -1,8 +1,6 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supabase Connection Test</title>
     <style>
         body {
@@ -10,199 +8,202 @@
             max-width: 800px;
             margin: 50px auto;
             padding: 20px;
-            background: #1a1a1a;
-            color: #fff;
         }
-        .status {
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
+        .result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
         }
-        .success { background: #10b981; }
-        .error { background: #ef4444; }
-        .info { background: #3b82f6; }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
         button {
-            background: #8b5cf6;
+            background: #007bff;
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
+            padding: 10px 20px;
+            border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
-            margin: 10px 5px;
         }
-        button:hover { background: #7c3aed; }
+        button:hover {
+            background: #0056b3;
+        }
         pre {
-            background: #2d2d2d;
-            padding: 15px;
-            border-radius: 6px;
-            overflow-x: auto;
-        }
-        input {
-            width: 100%;
+            background: #f8f9fa;
             padding: 10px;
-            margin: 5px 0;
-            border-radius: 4px;
-            border: 1px solid #444;
-            background: #2d2d2d;
-            color: white;
+            border-radius: 5px;
+            overflow-x: auto;
         }
     </style>
 </head>
 <body>
-    <h1>🔌 Supabase Connection Test</h1>
+    <h1>🔍 Supabase Connection Tester</h1>
+    <p>This will test your Supabase connection and help diagnose issues.</p>
     
-    <div class="status info">
-        <strong>Project URL:</strong> https://ilsdfangzmyxtofidjii.supabase.co
+    <div id="config" class="result info">
+        <h3>📋 Configuration</h3>
+        <p><strong>URL:</strong> https://zvacorxebezndxsukrlt.supabase.co</p>
+        <p><strong>Status:</strong> Testing...</p>
     </div>
-
-    <div id="status"></div>
-
-    <h2>Test Connection</h2>
-    <button onclick="testConnection()">Test Supabase Connection</button>
-    <button onclick="clearDemoMode()">Clear Demo Mode</button>
-
-    <h2>Test Registration</h2>
-    <input type="text" id="firstName" placeholder="First Name" value="Test">
-    <input type="text" id="lastName" placeholder="Last Name" value="User">
-    <input type="email" id="email" placeholder="Email" value="test@example.com">
-    <input type="password" id="password" placeholder="Password" value="password123">
-    <button onclick="testRegister()">Register Test User</button>
-
-    <h2>Test Login</h2>
-    <input type="email" id="loginEmail" placeholder="Email" value="test@example.com">
-    <input type="password" id="loginPassword" placeholder="Password" value="password123">
-    <button onclick="testLogin()">Test Login</button>
-
-    <div id="result"></div>
+    
+    <button onclick="testConnection()">🔄 Run Connection Test</button>
+    <button onclick="testAuth()">🔐 Test Authentication</button>
+    <button onclick="checkProjectStatus()">📊 Check Project Status</button>
+    
+    <div id="results"></div>
 
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-        const SUPABASE_URL = 'https://ilsdfangzmyxtofidjii.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsc2RmYW5nem15eHRvZmlkamlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDY5MjAsImV4cCI6MjA3NjE4MjkyMH0.UPp5WvMECnwN71TixcwRMz5P8B_axfEsj0TGEdJEENo';
+        const supabaseUrl = 'https://zvacorxebezndxsukrlt.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2YWNvcnhlYmV6bmR4c3Vrcmx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzMjg1ODksImV4cCI6MjA3NjkwNDU4OX0.RvthzYND4sfBzhtZ_bWZ3XbG16r3PZCliDiGfuhq1v8';
+        
+        window.supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        window.supabase = supabase;
+        function addResult(html, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = html;
+            document.getElementById('results').appendChild(div);
+        }
 
         window.testConnection = async function() {
-            const status = document.getElementById('status');
-            status.innerHTML = '<div class="status info">Testing connection...</div>';
-
+            document.getElementById('results').innerHTML = '';
+            addResult('<h3>⏳ Testing basic connection...</h3>', 'info');
+            
             try {
-                const { data, error } = await supabase.auth.getSession();
+                const start = Date.now();
+                const { data, error } = await window.supabase.auth.getSession();
+                const duration = Date.now() - start;
                 
                 if (error) {
-                    status.innerHTML = `<div class="status error">
-                        <strong>❌ Connection Failed</strong><br>
-                        Error: ${error.message}<br><br>
-                        <strong>Possible Solutions:</strong><br>
-                        1. Your Supabase project might be paused. Visit 
-                        <a href="https://supabase.com/dashboard" target="_blank">Supabase Dashboard</a> 
-                        and resume it.<br>
-                        2. Check your internet connection<br>
-                        3. Verify your Supabase URL and key are correct
-                    </div>`;
+                    addResult(`
+                        <h3>❌ Connection Error</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Time:</strong> ${duration}ms</p>
+                        <pre>${JSON.stringify(error, null, 2)}</pre>
+                    `, 'error');
                 } else {
-                    status.innerHTML = `<div class="status success">
-                        <strong>✅ Connected Successfully!</strong><br>
-                        Your Supabase project is active and responding.
-                    </div>`;
+                    addResult(`
+                        <h3>✅ Connection Successful!</h3>
+                        <p><strong>Response time:</strong> ${duration}ms</p>
+                        <p><strong>Session:</strong> ${data.session ? 'Active' : 'None'}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, 'success');
                 }
-            } catch (error) {
-                status.innerHTML = `<div class="status error">
-                    <strong>❌ Connection Error</strong><br>
-                    ${error.message}<br><br>
-                    Your Supabase project is likely paused or unreachable.
-                </div>`;
+            } catch (err) {
+                addResult(`
+                    <h3>💥 Critical Error</h3>
+                    <p><strong>Error:</strong> ${err.message}</p>
+                    <p>This usually means the Supabase project is paused or unreachable.</p>
+                    <pre>${err.stack}</pre>
+                `, 'error');
             }
         };
 
-        window.testRegister = async function() {
-            const result = document.getElementById('result');
-            const firstName = document.getElementById('firstName').value;
-            const lastName = document.getElementById('lastName').value;
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-
-            result.innerHTML = '<div class="status info">Registering user...</div>';
-
+        window.testAuth = async function() {
+            document.getElementById('results').innerHTML = '';
+            addResult('<h3>⏳ Testing authentication...</h3>', 'info');
+            
             try {
-                const { data, error } = await supabase.auth.signUp({
-                    email: email,
-                    password: password,
-                    options: {
-                        data: {
-                            first_name: firstName,
-                            last_name: lastName
-                        }
+                const testEmail = `test${Date.now()}@test.com`;
+                const testPassword = 'Test123456!';
+                
+                addResult(`
+                    <h3>📝 Attempting sign up...</h3>
+                    <p><strong>Email:</strong> ${testEmail}</p>
+                `, 'info');
+                
+                const { data, error } = await window.supabase.auth.signUp({
+                    email: testEmail,
+                    password: testPassword,
+                });
+                
+                if (error) {
+                    addResult(`
+                        <h3>❌ Sign Up Failed</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <pre>${JSON.stringify(error, null, 2)}</pre>
+                    `, 'error');
+                } else {
+                    addResult(`
+                        <h3>✅ Sign Up Successful!</h3>
+                        <p><strong>User ID:</strong> ${data.user?.id || 'N/A'}</p>
+                        <p><strong>Email:</strong> ${data.user?.email || 'N/A'}</p>
+                        <p><strong>Session:</strong> ${data.session ? 'Created' : 'Pending email confirmation'}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, 'success');
+                }
+            } catch (err) {
+                addResult(`
+                    <h3>💥 Authentication Error</h3>
+                    <p><strong>Error:</strong> ${err.message}</p>
+                    <pre>${err.stack}</pre>
+                `, 'error');
+            }
+        };
+
+        window.checkProjectStatus = async function() {
+            document.getElementById('results').innerHTML = '';
+            addResult('<h3>⏳ Checking project status...</h3>', 'info');
+            
+            try {
+                const response = await fetch(supabaseUrl + '/rest/v1/', {
+                    headers: {
+                        'apikey': supabaseAnonKey,
+                        'Content-Type': 'application/json'
                     }
                 });
-
-                if (error) {
-                    result.innerHTML = `<div class="status error">
-                        <strong>❌ Registration Failed</strong><br>
-                        ${error.message}
-                    </div>`;
+                
+                if (response.ok) {
+                    addResult(`
+                        <h3>✅ REST API is Active</h3>
+                        <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                        <p>Your Supabase project is running!</p>
+                    `, 'success');
                 } else {
-                    result.innerHTML = `<div class="status success">
-                        <strong>✅ User Registered!</strong><br>
-                        User ID: ${data.user.id}<br>
-                        Email: ${data.user.email}<br><br>
-                        Check your Supabase Dashboard:<br>
-                        <a href="https://supabase.com/dashboard/project/ilsdfangzmyxtofidjii/auth/users" 
-                           target="_blank">View Users</a>
-                    </div>`;
+                    addResult(`
+                        <h3>⚠️ REST API Issue</h3>
+                        <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                        <p>The project might be paused or having issues.</p>
+                    `, 'error');
                 }
-            } catch (error) {
-                result.innerHTML = `<div class="status error">
-                    <strong>❌ Error:</strong> ${error.message}
-                </div>`;
+            } catch (err) {
+                addResult(`
+                    <h3>❌ Project Unreachable</h3>
+                    <p><strong>Error:</strong> ${err.message}</p>
+                    <p>Your Supabase project appears to be paused or deleted.</p>
+                    <h4>Solutions:</h4>
+                    <ul>
+                        <li>Go to <a href="https://supabase.com/dashboard" target="_blank">Supabase Dashboard</a></li>
+                        <li>Check if your project is paused (common on free tier)</li>
+                        <li>Click "Resume" or "Restore" if needed</li>
+                        <li>Or create a new project and update credentials</li>
+                    </ul>
+                `, 'error');
             }
         };
 
-        window.testLogin = async function() {
-            const result = document.getElementById('result');
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-
-            result.innerHTML = '<div class="status info">Logging in...</div>';
-
-            try {
-                const { data, error } = await supabase.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
-
-                if (error) {
-                    result.innerHTML = `<div class="status error">
-                        <strong>❌ Login Failed</strong><br>
-                        ${error.message}
-                    </div>`;
-                } else {
-                    result.innerHTML = `<div class="status success">
-                        <strong>✅ Login Successful!</strong><br>
-                        User ID: ${data.user.id}<br>
-                        Email: ${data.user.email}<br>
-                        Session Token: ${data.session.access_token.substring(0, 20)}...
-                    </div>`;
-                }
-            } catch (error) {
-                result.innerHTML = `<div class="status error">
-                    <strong>❌ Error:</strong> ${error.message}
-                </div>`;
-            }
-        };
-
-        window.clearDemoMode = function() {
-            localStorage.removeItem('useDemoMode');
-            localStorage.removeItem('demoUsers');
-            alert('Demo mode cleared! The app will now try to connect to Supabase first.');
-        };
-
-        // Auto-test on load
-        window.testConnection();
+        // Auto-run basic test on load
+        setTimeout(() => {
+            testConnection();
+        }, 500);
     </script>
 </body>
 </html>
+
+
 

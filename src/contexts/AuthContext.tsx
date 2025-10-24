@@ -1,9 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/services/supabaseClient';
-import { testAuth, isDemoMode, setDemoMode } from '@/services/authTest';
-import type { TestUser } from '@/services/authTest';
+import { directAuth } from '@/services/authFallback';
 
+// Keep the existing User shape expected across the app
 export interface User {
 	id: string;
 	firstName: string;
@@ -29,7 +29,7 @@ export interface RegisterData {
 interface AuthContextType {
 	user: User | null;
 	isLoading: boolean;
-	login: (email: string, password: string) => Promise<boolean>;
+	login: (email: string, password: string, rememberMe?: boolean) => Promise<boolean>;
 	register: (userData: RegisterData) => Promise<boolean>;
 	logout: () => void;
 	updateUser: (userData: Partial<User>) => Promise<void>;
@@ -75,6 +75,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 	const [user, setUser] = useState<User | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	
+	// Memoize isAdmin to prevent unnecessary re-renders
 	const isAdmin = useMemo(() => !!user && user.role === 'admin', [user]);
 
 	// On mount, load current session and subscribe to auth state changes
@@ -83,6 +84,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 		const init = async () => {
 			try {
 				setIsLoading(true);
+				
+				// First, check for stored session data
+				const storedUserData = localStorage.getItem('user_data');
+				const storedToken = localStorage.getItem('supabase_auth_token');
+				
+				if (storedUserData && storedToken) {
+					try {
+						const userData = JSON.parse(storedUserData);
+						// Verify token is still valid by fetching profile
+						const profileResult = await directAuth.getProfile(userData.id, storedToken);
+						if (profileResult.data && !profileResult.error) {
+							if (!isMounted) return;
+							setUser(userData);
+							setIsLoading(false);
+							return;
+						} else {
+							// Token is invalid, clear stored data
+							localStorage.removeItem('supabase_auth_token');
+							localStorage.removeItem('supabase_refresh_token');
+							localStorage.removeItem('user_data');
+						}
+					} catch (error) {
+						// Stored data is corrupted, clear it
+						localStorage.removeItem('supabase_auth_token');
+						localStorage.removeItem('supabase_refresh_token');
+						localStorage.removeItem('user_data');
+					}
+				}
+				
+				// Fallback to Supabase client session check
 				const { data: { session } } = await supabase.auth.getSession();
 				if (session?.user) {
 					const authUser = session.user;
@@ -107,6 +138,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 		const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
 			if (!session?.user) {
 				setUser(null);
+				// Clear stored data when session is lost
+				localStorage.removeItem('supabase_auth_token');
+				localStorage.removeItem('supabase_refresh_token');
+				localStorage.removeItem('user_data');
 				return;
 			}
 			const { data: profile } = await supabase
@@ -114,7 +149,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 				.select('*')
 				.eq('id', session.user.id)
 				.maybeSingle();
-			setUser(mapToAppUser(session.user, profile));
+			const appUser = mapToAppUser(session.user, profile);
+			setUser(appUser);
+			
+			// Store session data for persistence
+			if (session.access_token && session.refresh_token) {
+				localStorage.setItem('supabase_auth_token', session.access_token);
+				localStorage.setItem('supabase_refresh_token', session.refresh_token);
+				localStorage.setItem('user_data', JSON.stringify(appUser));
+			}
 		});
 
 		return () => {
@@ -123,86 +166,85 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 		};
 	}, []);
 
-	const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+	const login = useCallback(async (email: string, password: string, rememberMe: boolean = true): Promise<boolean> => {
 		try {
 			setIsLoading(true);
-			let useSupabase = !isDemoMode();
-			
-			// Test Supabase connection if not in demo mode
-			if (useSupabase) {
-				try {
-					const connectionPromise = supabase.auth.getSession();
-					const timeoutPromise = new Promise((_, reject) => 
-						setTimeout(() => reject(new Error('Connection timeout')), 1500)
-					);
-					
-					await Promise.race([connectionPromise, timeoutPromise]);
-				} catch {
-					useSupabase = false;
-					setDemoMode(true);
-				}
-			}
-			
-			// Use demo authentication if Supabase is unavailable
-			if (!useSupabase) {
-				const result = await testAuth.login(email, password);
-				if (result.success && result.user) {
-					const user: User = {
-						id: result.user.id,
-						firstName: result.user.firstName,
-						lastName: result.user.lastName,
-						email: result.user.email,
-						fullName: result.user.fullName,
-						role: result.user.role,
-						isEmailVerified: result.user.isEmailVerified,
-						lastLogin: new Date().toISOString(),
-						createdAt: result.user.createdAt,
-					};
-					setUser(user);
-					toast({
-						title: 'Welcome back!',
-						description: `Hello ${user.firstName}, you're successfully logged in.`,
-					});
-					return true;
-				} else {
-					throw new Error(result.error || 'Login failed');
-				}
-			}
-			
-			// Supabase authentication
 			const normalizedEmail = email.trim().toLowerCase();
 			const pwd = password.trim();
 			
-			const authPromise = supabase.auth.signInWithPassword({ 
-				email: normalizedEmail, 
-				password: pwd 
-			});
+			// Use direct API approach for reliable authentication
+			const fallbackResult = await directAuth.signIn(normalizedEmail, pwd);
+			let data = fallbackResult.data;
+			let error = fallbackResult.error;
 			
-			const timeoutPromise = new Promise((_, reject) => 
-				setTimeout(() => reject(new Error('Authentication timeout')), 10000)
-			);
+			if (error) {
+				// Only treat as connection error if it's actually a network issue
+				if (error.message?.includes('Failed to fetch') || 
+					error.message?.includes('NetworkError') ||
+					error.message?.includes('fetch') ||
+					error.message?.includes('timeout') ||
+					error.message?.includes('ERR_NETWORK') ||
+					error.message?.includes('ERR_INTERNET_DISCONNECTED') ||
+					error.message?.includes('Authentication timeout')) {
+					throw new Error('Unable to connect to server. Please check your internet connection and ensure Supabase is active.');
+				}
+				// For all other errors, pass them through as-is
+				throw error;
+			}
 			
-			const { data, error } = await Promise.race([authPromise, timeoutPromise]) as any;
+			if (!data.user) {
+				throw new Error('No user returned from authentication');
+			}
 			
-			if (error) throw error;
-			if (!data.user) throw new Error('No user returned');
+			// Fetch profile data using direct API
+			let profile = null;
+			if (data.access_token) {
+				const profileResult = await directAuth.getProfile(data.user.id, data.access_token);
+				if (profileResult.data && !profileResult.error) {
+					profile = profileResult.data;
+				}
+				// Continue with login even if profile fetch fails
+			}
 			
-			const { data: profile } = await supabase
-				.from('profiles')
-				.select('*')
-				.eq('id', data.user.id)
-				.maybeSingle();
+			const appUser = mapToAppUser(data.user, profile);
+			setUser(appUser);
 			
-			setUser(mapToAppUser(data.user, profile));
+			// Store session data for persistence (only if rememberMe is true)
+			if (rememberMe && data.access_token && data.refresh_token) {
+				localStorage.setItem('supabase_auth_token', data.access_token);
+				localStorage.setItem('supabase_refresh_token', data.refresh_token);
+				localStorage.setItem('user_data', JSON.stringify(appUser));
+			} else if (!rememberMe) {
+				// Clear any existing stored data if rememberMe is false
+				localStorage.removeItem('supabase_auth_token');
+				localStorage.removeItem('supabase_refresh_token');
+				localStorage.removeItem('user_data');
+			}
+			
 			toast({
 				title: 'Welcome back!',
 				description: `Hello ${profile?.first_name || data.user.email}, you're successfully logged in.`,
 			});
 			return true;
 		} catch (error: any) {
+			let errorMessage = error?.message || 'Invalid email or password';
+			
+			// Provide helpful error messages
+			if (errorMessage.includes('Invalid login credentials')) {
+				errorMessage = 'Invalid email or password. Please check your credentials.';
+			} else if (errorMessage.includes('Email not confirmed')) {
+				errorMessage = 'Please verify your email before logging in. Check your inbox.';
+			} else if (errorMessage.includes('Too many requests')) {
+				errorMessage = 'Too many login attempts. Please wait a moment and try again.';
+			} else if (errorMessage.includes('User not found')) {
+				errorMessage = 'No account found with this email address.';
+			} else if (errorMessage.includes('connect to server') || errorMessage.includes('fetch') || errorMessage.includes('timeout')) {
+				errorMessage = 'Cannot connect to Supabase. Please ensure your project is active.';
+			}
+			
 			toast({
 				title: 'Login failed',
-				description: error?.message || 'Invalid email or password',
+				description: errorMessage,
 				variant: 'destructive',
 			});
 			return false;
@@ -214,59 +256,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 	const register = useCallback(async (userData: RegisterData): Promise<boolean> => {
 		try {
 			setIsLoading(true);
-			let useSupabase = !isDemoMode();
-			
-			// Test Supabase connection if not in demo mode
-			if (useSupabase) {
-				try {
-					const connectionPromise = supabase.auth.getSession();
-					const timeoutPromise = new Promise((_, reject) => 
-						setTimeout(() => reject(new Error('Connection timeout')), 1500)
-					);
-					
-					await Promise.race([connectionPromise, timeoutPromise]);
-				} catch {
-					useSupabase = false;
-					setDemoMode(true);
-				}
-			}
-			
-			// Use demo registration if Supabase is unavailable
-			if (!useSupabase) {
-				const result = await testAuth.register({
-					firstName: userData.firstName,
-					lastName: userData.lastName,
-					email: userData.email,
-					password: userData.password
-				});
-				
-				if (result.success && result.user) {
-					const user: User = {
-						id: result.user.id,
-						firstName: result.user.firstName,
-						lastName: result.user.lastName,
-						email: result.user.email,
-						fullName: result.user.fullName,
-						role: result.user.role,
-						isEmailVerified: result.user.isEmailVerified,
-						lastLogin: new Date().toISOString(),
-						createdAt: result.user.createdAt,
-					};
-					setUser(user);
-					toast({
-						title: 'Account created successfully!',
-						description: `Welcome to Aero Car Store, ${userData.firstName}!`,
-					});
-					return true;
-				} else {
-					throw new Error(result.error || 'Registration failed');
-				}
-			}
-			
-			// Supabase registration
 			const { firstName, lastName, email, password } = userData;
 			const normalizedEmail = email.trim().toLowerCase();
 			const redirectTo = (import.meta.env.VITE_SITE_URL as string) || undefined;
+			
+			// Use Supabase client for registration (usually works fine)
 			const { data, error } = await supabase.auth.signUp({
 				email: normalizedEmail,
 				password,
@@ -276,9 +270,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 				},
 			});
 			
-			if (error) throw error;
-			if (!data.user) throw new Error('Registration failed');
+			if (error) {
+				// Only treat as connection error if it's actually a network issue
+				if (error.message?.includes('Failed to fetch') || 
+					error.message?.includes('NetworkError') ||
+					error.message?.includes('fetch') ||
+					error.message?.includes('timeout') ||
+					error.message?.includes('ERR_NETWORK') ||
+					error.message?.includes('ERR_INTERNET_DISCONNECTED')) {
+					throw new Error('Unable to connect to server. Please check your internet connection and ensure Supabase is active.');
+				}
+				// For all other errors, pass them through as-is
+				throw error;
+			}
 			
+			if (!data.user) throw new Error('Registration failed - no user returned');
+			
+			// Wait for profile to be created by database trigger
 			let profile: any | null = null;
 			for (let i = 0; i < 10; i++) {
 				const { data: p, error: pErr } = await supabase
@@ -296,7 +304,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 			if (!data.session) {
 				toast({
 					title: 'Confirm your email',
-					description: 'We sent you a confirmation link. Please verify to finish sign in.',
+					description: 'We sent you a confirmation link. Please check your inbox to verify your account.',
 				});
 			} else {
 				toast({
@@ -306,9 +314,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 			}
 			return true;
 		} catch (error: any) {
+			let errorMessage = error?.message || 'Failed to create account';
+			
+			// Provide helpful error messages
+			if (errorMessage.includes('User already registered')) {
+				errorMessage = 'An account with this email already exists. Please login instead.';
+			} else if (errorMessage.includes('Password should be at least')) {
+				errorMessage = 'Password is too weak. Please use at least 6 characters.';
+			} else if (errorMessage.includes('connect to server') || errorMessage.includes('fetch')) {
+				errorMessage = 'Cannot connect to Supabase. Please ensure your project is active.';
+			}
+			
 			toast({
 				title: 'Registration failed',
-				description: error?.message || 'Failed to create account',
+				description: errorMessage,
 				variant: 'destructive',
 			});
 			return false;
@@ -318,15 +337,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 	}, []);
 
 	const logout = useCallback(async () => {
+		// Always clear local state immediately for responsive UI
+		setUser(null);
+		
+		// Clear stored session data
+		localStorage.removeItem('supabase_auth_token');
+		localStorage.removeItem('supabase_refresh_token');
+		localStorage.removeItem('user_data');
+		
 		try {
-			await supabase.auth.signOut();
-		} finally {
-			setUser(null);
-			toast({
-				title: 'Logged out successfully',
-				description: 'You have been logged out of your account.',
-			});
+			// Try to get current session for logout with timeout
+			const sessionPromise = supabase.auth.getSession();
+			const timeoutPromise = new Promise((_, reject) => 
+				setTimeout(() => reject(new Error('Session timeout')), 3000)
+			);
+			
+			const { data: session } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+			
+			if (session?.session?.access_token) {
+				// Use direct API logout with timeout protection
+				await directAuth.signOut(session.session.access_token);
+			}
+		} catch (error) {
+			// Ignore logout API errors - local state is already cleared
 		}
+		
+		// Show success message
+		toast({
+			title: 'Logged out successfully',
+			description: 'You have been logged out of your account.',
+		});
 	}, []);
 
 	const updateUser = useCallback(async (userData: Partial<User>) => {
@@ -359,7 +399,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 		}
 	}, [user]);
 
-	const value = useMemo<AuthContextType>(() => ({
+	const value: AuthContextType = useMemo(() => ({
 		user,
 		isLoading,
 		login,

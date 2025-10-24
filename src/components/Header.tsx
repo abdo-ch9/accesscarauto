@@ -1,4 +1,4 @@
-import { Search, ShoppingCart, Heart, User, Menu, LogOut, Settings } from "lucide-react";
+import { Search, ShoppingCart, Heart, User, Menu, LogOut, Settings, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
@@ -37,8 +37,8 @@ const Header = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
   return (
@@ -131,7 +131,15 @@ const Header = () => {
               {user ? (
                 <div className="flex items-center gap-2">
                   {isAdmin && (
-                    <Badge variant="secondary" className="uppercase tracking-wide">Admin</Badge>
+                    <>
+                      <Badge variant="secondary" className="uppercase tracking-wide">Admin</Badge>
+                      <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex">
+                        <Link to="/admin" className="flex items-center gap-1">
+                          <Shield className="h-4 w-4" />
+                          Admin
+                        </Link>
+                      </Button>
+                    </>
                   )}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -164,6 +172,14 @@ const Header = () => {
                         <span>Settings</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
+                      {isAdmin && (
+                        <DropdownMenuItem asChild>
+                          <Link to="/admin" className="flex items-center">
+                            <Shield className="mr-2 h-4 w-4" />
+                            <span>Admin</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Log out</span>

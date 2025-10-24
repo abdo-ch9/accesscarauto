@@ -1,5 +1,4 @@
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import PageLayout from "@/components/PageLayout";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
@@ -7,11 +6,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, Filter } from "lucide-react";
-import { useMemo, useState } from "react";
-import { toast } from "@/hooks/use-toast";
+import { useMemo, useState, useCallback, memo } from "react";
+import { toast } from "@/hooks";
 import { cartEvents } from "@/lib/utils";
 import { products as catalog } from "@/lib/products";
-import { Link } from "react-router-dom";
+import ProductCard from "@/components/ProductCard";
 
 const Shop = () => {
   const products = useMemo(() => catalog, []);
@@ -38,25 +37,26 @@ const Shop = () => {
   const availableBadges = useMemo(() => Array.from(new Set(products.map(p => p.badge).filter(Boolean))) as string[], [products]);
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
 
-  const filteredProducts = products.filter((p) => {
-    const matchesCategory = category === "all" || p.category === category;
-    const matchesPrice = p.price >= priceRange[0] && p.price <= priceRange[1];
-    const matchesSearch = searchQuery.trim().length === 0 ||
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesBadgeSelection = selectedBadges.length === 0 || (p.badge ? selectedBadges.includes(p.badge) : false);
-    const matchesNew = !onlyNew || p.badge === "NEW";
-    return matchesCategory && matchesPrice && matchesSearch && matchesBadgeSelection && matchesNew;
-  });
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      const matchesCategory = category === "all" || p.category === category;
+      const matchesPrice = p.price >= priceRange[0] && p.price <= priceRange[1];
+      const matchesSearch = searchQuery.trim().length === 0 ||
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesBadgeSelection = selectedBadges.length === 0 || (p.badge ? selectedBadges.includes(p.badge) : false);
+      const matchesNew = !onlyNew || p.badge === "NEW";
+      return matchesCategory && matchesPrice && matchesSearch && matchesBadgeSelection && matchesNew;
+    });
+  }, [products, category, priceRange, searchQuery, selectedBadges, onlyNew]);
 
-  const addToCart = (name: string) => {
+  const addToCart = useCallback((name: string) => {
     toast({ title: "Added to cart", description: `${name} added to your cart.` });
     cartEvents.emit({ type: "cart:add", delta: 1 });
-  };
+  }, []);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <PageLayout>
       <main className="container mx-auto px-4 py-24">
         <div className="page-hero">
           <div className="flex items-center justify-between">
@@ -148,31 +148,19 @@ const Shop = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredProducts.map((p) => (
-                  <Link key={p.id} to={`/product/${p.id}`} className="product-card group">
-                    <div className="relative overflow-hidden">
-                      <img src={p.image} alt={p.name} className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-110" />
-                      <Badge className="absolute top-3 left-3">{p.badge}</Badge>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-foreground mb-2 group-hover:text-primary transition-colors">{p.name}</h3>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xl font-bold text-primary">${p.price}</span>
-                        <Button size="sm" className="btn-racing" onClick={(e) => { e.preventDefault(); addToCart(p.name); }}>
-                          <ShoppingCart className="h-4 w-4 mr-1" />
-                          Add
-                        </Button>
-                      </div>
-                    </div>
-                  </Link>
+                {filteredProducts.map((product) => (
+                  <ProductCard 
+                    key={product.id} 
+                    product={product} 
+                    onAddToCart={addToCart} 
+                  />
                 ))}
               </div>
             )}
           </section>
         </div>
       </main>
-      <Footer />
-    </div>
+    </PageLayout>
   );
 };
 

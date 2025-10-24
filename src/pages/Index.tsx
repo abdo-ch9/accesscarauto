@@ -1,16 +1,14 @@
-import Header from "@/components/Header";
+import PageLayout from "@/components/PageLayout";
 import HeroSection from "@/components/HeroSection";
 import VehiclePartFinder from "@/components/VehiclePartFinder";
 import AboutSection from "@/components/AboutSection";
 import TrendingItems from "@/components/TrendingItems";
 import FeaturedProducts from "@/components/FeaturedProducts";
 import TestimonialSection from "@/components/TestimonialSection";
-import Footer from "@/components/Footer";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <PageLayout>
       <main>
         <HeroSection />
         <VehiclePartFinder />
@@ -19,8 +17,7 @@ const Index = () => {
         <FeaturedProducts />
         <TestimonialSection />
       </main>
-      <Footer />
-    </div>
+    </PageLayout>
   );
 };
 

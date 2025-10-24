@@ -1,14 +1,11 @@
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Eye, EyeOff, ArrowLeft, CheckCircle } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import AuthForm from "@/components/AuthForm";
+import FormInput from "@/components/FormInput";
+import { useFormValidation, commonValidationRules } from "@/hooks";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -21,33 +18,29 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { register } = useAuth();
   const navigate = useNavigate();
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
-    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Email is invalid";
-    if (!formData.password) newErrors.password = "Password is required";
-    else if (formData.password.length < 6) newErrors.password = "Password must be at least 6 characters";
-    if (!formData.confirmPassword) newErrors.confirmPassword = "Please confirm your password";
-    else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Passwords do not match";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  
+  const { errors, validateForm, validateField } = useFormValidation({
+    firstName: commonValidationRules.firstName,
+    lastName: commonValidationRules.lastName,
+    email: commonValidationRules.email,
+    password: commonValidationRules.password,
+    confirmPassword: {
+      required: true,
+      custom: (value) => value !== formData.password ? "Passwords do not match" : null
+    }
+  });
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+    validateField(field, value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm(formData)) return;
     setIsSubmitting(true);
     const safetyTimeout = setTimeout(() => {
       // Ensure we never get stuck in submitting state due to any hanging network
@@ -70,110 +63,104 @@ const Register = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="container mx-auto px-4 py-24 max-w-2xl">
-        <div className="text-center">
-          <Link to="/" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
-          </Link>
+    <AuthForm
+      title="Join Aero Car Store"
+      description="Create your account to access premium automotive parts"
+      footerText="Already have an account?"
+      footerLink="/login"
+      footerLinkText="Sign in"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormInput
+            id="firstName"
+            label="First Name"
+            value={formData.firstName}
+            onChange={(value) => handleInputChange("firstName", value)}
+            error={errors.firstName}
+            placeholder="John"
+            autoComplete="given-name"
+            required
+          />
+          
+          <FormInput
+            id="lastName"
+            label="Last Name"
+            value={formData.lastName}
+            onChange={(value) => handleInputChange("lastName", value)}
+            error={errors.lastName}
+            placeholder="Doe"
+            autoComplete="family-name"
+            required
+          />
         </div>
-        <div className="text-center mt-2">
-          <div className="text-4xl font-bold text-gradient-red mb-2">AERO</div>
-          <p className="text-muted-foreground">Create your account</p>
+
+        <FormInput
+          id="email"
+          label="Email"
+          type="email"
+          value={formData.email}
+          onChange={(value) => handleInputChange("email", value)}
+          error={errors.email}
+          placeholder="john@example.com"
+          autoComplete="email"
+          required
+        />
+
+        <FormInput
+          id="password"
+          label="Password"
+          type="password"
+          value={formData.password}
+          onChange={(value) => handleInputChange("password", value)}
+          error={errors.password}
+          placeholder="Create a password"
+          autoComplete="new-password"
+          showPasswordToggle
+          showPassword={showPassword}
+          onTogglePassword={() => setShowPassword(!showPassword)}
+          required
+        />
+
+        <FormInput
+          id="confirmPassword"
+          label="Confirm Password"
+          type="password"
+          value={formData.confirmPassword}
+          onChange={(value) => handleInputChange("confirmPassword", value)}
+          error={errors.confirmPassword}
+          placeholder="Confirm your password"
+          autoComplete="new-password"
+          showPasswordToggle
+          showPassword={showConfirmPassword}
+          onTogglePassword={() => setShowConfirmPassword(!showConfirmPassword)}
+          required
+        />
+
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-foreground">Password Requirements:</p>
+          <div className="space-y-1">
+            {passwordRequirements.map((req, index) => (
+              <div key={index} className="flex items-center space-x-2">
+                <CheckCircle className={`h-4 w-4 ${req.met ? "text-success" : "text-muted-foreground"}`} />
+                <span className={`text-sm ${req.met ? "text-success" : "text-muted-foreground"}`}>{req.text}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <Card className="card-automotive mt-6">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Join Aero Car Store</CardTitle>
-            <CardDescription className="text-center">Create your account to access premium automotive parts</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input id="firstName" type="text" placeholder="John" value={formData.firstName} onChange={(e) => handleInputChange("firstName", e.target.value)} className={`bg-input border-input-border ${errors.firstName ? "border-destructive" : ""}`} required />
-                  {errors.firstName && <p className="text-sm text-destructive">{errors.firstName}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input id="lastName" type="text" placeholder="Doe" value={formData.lastName} onChange={(e) => handleInputChange("lastName", e.target.value)} className={`bg-input border-input-border ${errors.lastName ? "border-destructive" : ""}`} required />
-                  {errors.lastName && <p className="text-sm text-destructive">{errors.lastName}</p>}
-                </div>
-              </div>
+        <div className="flex items-center space-x-2">
+          <input id="terms" type="checkbox" className="h-4 w-4 text-primary focus:ring-primary border-input-border rounded" required />
+          <label htmlFor="terms" className="text-sm text-muted-foreground">
+            I agree to the <Link to="/terms" className="text-primary hover:text-primary-hover">Terms of Service</Link> and <Link to="/privacy" className="text-primary hover:text-primary-hover">Privacy Policy</Link>
+          </label>
+        </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="john@example.com" value={formData.email} onChange={(e) => handleInputChange("email", e.target.value)} className={`bg-input border-input-border ${errors.email ? "border-destructive" : ""}`} required />
-                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Input id="password" type={showPassword ? "text" : "password"} placeholder="Create a password" value={formData.password} onChange={(e) => handleInputChange("password", e.target.value)} className={`bg-input border-input-border pr-10 ${errors.password ? "border-destructive" : ""}`} required />
-                  <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
-                    {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
-                  </Button>
-                </div>
-                {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <div className="relative">
-                  <Input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} placeholder="Confirm your password" value={formData.confirmPassword} onChange={(e) => handleInputChange("confirmPassword", e.target.value)} className={`bg-input border-input-border pr-10 ${errors.confirmPassword ? "border-destructive" : ""}`} required />
-                  <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
-                  </Button>
-                </div>
-                {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">Password Requirements:</p>
-                <div className="space-y-1">
-                  {passwordRequirements.map((req, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      <CheckCircle className={`h-4 w-4 ${req.met ? "text-success" : "text-muted-foreground"}`} />
-                      <span className={`text-sm ${req.met ? "text-success" : "text-muted-foreground"}`}>{req.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <input id="terms" type="checkbox" className="h-4 w-4 text-primary focus:ring-primary border-input-border rounded" required />
-                <Label htmlFor="terms" className="text-sm text-muted-foreground">
-                  I agree to the <Link to="/terms" className="text-primary hover:text-primary-hover">Terms of Service</Link> and <Link to="/privacy" className="text-primary hover:text-primary-hover">Privacy Policy</Link>
-                </Label>
-              </div>
-
-              <Button type="submit" className="w-full btn-racing" disabled={isSubmitting || !Object.values(formData).every((val) => val.trim())}>
-                {isSubmitting ? "Creating account..." : "Create account"}
-              </Button>
-            </form>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <Separator className="w-full" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Already have an account?</span>
-              </div>
-            </div>
-
-            <div className="text-center text-sm">
-              <span className="text-muted-foreground">Already have an account? </span>
-              <Link to="/login" className="text-primary hover:text-primary-hover font-medium transition-colors">Sign in</Link>
-            </div>
-          </CardContent>
-        </Card>
-      </main>
-      <Footer />
-    </div>
+        <Button type="submit" className="w-full btn-racing" disabled={isSubmitting}>
+          {isSubmitting ? "Creating account..." : "Create account"}
+        </Button>
+      </form>
+    </AuthForm>
   );
 };
 

@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Save, User, Mail, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
+import PageLayout from '@/components/PageLayout';
+import FormInput from '@/components/FormInput';
+import { toast, useFormValidation, commonValidationRules } from '@/hooks';
 
 const Profile = () => {
   const { user, updateUser } = useAuth();
@@ -18,15 +18,19 @@ const Profile = () => {
     email: user?.email || ''
   });
 
+  const { errors, validateForm, validateField } = useFormValidation({
+    firstName: commonValidationRules.firstName,
+    lastName: commonValidationRules.lastName,
+    email: commonValidationRules.email
+  });
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    validateField(field, value);
+  };
+
   const handleSave = () => {
-    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim()) {
-      toast({
-        title: "Please fill in all fields",
-        description: "All fields are required",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (!validateForm(formData)) return;
 
     updateUser(formData);
     setIsEditing(false);
@@ -60,7 +64,7 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pt-20 pb-12">
+    <PageLayout className="pt-20 pb-12">
       <div className="container mx-auto px-4 max-w-4xl">
         {/* Back to Home Link */}
         <div className="mb-8">
@@ -104,39 +108,34 @@ const Profile = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input
-                      id="firstName"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                      disabled={!isEditing}
-                      className="bg-input border-input-border"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                      disabled={!isEditing}
-                      className="bg-input border-input-border"
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  <FormInput
+                    id="firstName"
+                    label="First Name"
+                    value={formData.firstName}
+                    onChange={(value) => handleInputChange("firstName", value)}
+                    error={errors.firstName}
                     disabled={!isEditing}
-                    className="bg-input border-input-border"
+                  />
+                  
+                  <FormInput
+                    id="lastName"
+                    label="Last Name"
+                    value={formData.lastName}
+                    onChange={(value) => handleInputChange("lastName", value)}
+                    error={errors.lastName}
+                    disabled={!isEditing}
                   />
                 </div>
+                
+                <FormInput
+                  id="email"
+                  label="Email Address"
+                  type="email"
+                  value={formData.email}
+                  onChange={(value) => handleInputChange("email", value)}
+                  error={errors.email}
+                  disabled={!isEditing}
+                />
 
                 {isEditing && (
                   <div className="flex space-x-4">
@@ -202,7 +201,7 @@ const Profile = () => {
           </div>
         </div>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

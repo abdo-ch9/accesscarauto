@@ -1,49 +1,34 @@
-import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Suspense, lazy } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
-
-// Eager load critical pages
+import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Profile from "./pages/Profile";
+import NotFound from "./pages/NotFound";
+import Shop from "./pages/Shop";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
 
-// Lazy load other pages
-const Profile = lazy(() => import("./pages/Profile"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-const Shop = lazy(() => import("./pages/Shop"));
-const About = lazy(() => import("./pages/About"));
-const Services = lazy(() => import("./pages/Services"));
-const Location = lazy(() => import("./pages/Location"));
-const Contact = lazy(() => import("./pages/Contact"));
-const Performance = lazy(() => import("./pages/Performance"));
-const Accessories = lazy(() => import("./pages/Accessories"));
-const Blog = lazy(() => import("./pages/Blog"));
-const Wishlist = lazy(() => import("./pages/Wishlist"));
-const Orders = lazy(() => import("./pages/Orders"));
-const TrackOrder = lazy(() => import("./pages/TrackOrder"));
-const Shipping = lazy(() => import("./pages/Shipping"));
-const Returns = lazy(() => import("./pages/Returns"));
-const SizeGuide = lazy(() => import("./pages/SizeGuide"));
-const FAQ = lazy(() => import("./pages/FAQ"));
-const Privacy = lazy(() => import("./pages/Privacy"));
-const Terms = lazy(() => import("./pages/Terms"));
-const Cookies = lazy(() => import("./pages/Cookies"));
-const Cart = lazy(() => import("./pages/Cart"));
-const ProductDetail = lazy(() => import("./pages/ProductDetail"));
-const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+// Lazy load admin components for better performance
+const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 
-const queryClient = new QueryClient();
-
-// Loading fallback component
-const LoadingFallback = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-  </div>
-);
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -52,36 +37,36 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Suspense fallback={<LoadingFallback />}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/shop" element={<Shop />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/location" element={<Location />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/performance" element={<Performance />} />
-              <Route path="/accessories" element={<Accessories />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/wishlist" element={<Wishlist />} />
-              <Route path="/cart" element={<Cart />} />
-              <Route path="/product/:id" element={<ProductDetail />} />
-              <Route path="/orders" element={<Orders />} />
-              <Route path="/track-order" element={<TrackOrder />} />
-              <Route path="/shipping" element={<Shipping />} />
-              <Route path="/returns" element={<Returns />} />
-              <Route path="/size-guide" element={<SizeGuide />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/cookies" element={<Cookies />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/profile" element={<Profile />} />
+            
+            {/* Admin Routes */}
+            <Route path="/admin" element={
+              <ProtectedRoute requireRole="admin">
+                <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="text-lg">Loading admin panel...</div></div>}>
+                  <AdminLayout />
+                </Suspense>
+              </ProtectedRoute>
+            }>
+              <Route index element={
+                <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="text-lg">Loading dashboard...</div></div>}>
+                  <AdminDashboard />
+                </Suspense>
+              } />
+              <Route path="orders" element={<div className="p-6"><h1 className="text-2xl font-bold">Orders Management</h1><p>Manage customer orders here.</p></div>} />
+              <Route path="products" element={<div className="p-6"><h1 className="text-2xl font-bold">Products Management</h1><p>Manage products here.</p></div>} />
+              <Route path="customers" element={<div className="p-6"><h1 className="text-2xl font-bold">Customers Management</h1><p>Manage customers here.</p></div>} />
+            </Route>
+            
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
